@@ -377,3 +377,84 @@ class BatchAcquisitionRule(AcquisitionRule[None, SearchSpace]):
         points = tf.reshape(vectorized_points, [self._num_query_points, -1])
 
         return points, None
+
+
+# class FlowSampling(AcquisitionRule[None, SearchSpace]):
+#     """ Implements Flow-based sampling for choosing optimal points. """
+
+#     def __init__(self, num_query_points: int):
+#         """
+#         :param num_search_space_samples: The number of points at which to sample the posterior.
+#         :param num_query_points: The number of points to acquire.
+#         """
+      
+#         if not num_query_points > 0:
+#             raise ValueError(
+#                 f"Number of query points must be greater than 0, got {num_query_points}"
+#             )
+#         self._num_query_points = num_query_points
+
+#     def acquire(
+#         self,
+#         search_space: SearchSpace,
+#         datasets: Mapping[str, Dataset],
+#         models: Mapping[str, ProbabilisticModel],
+#         state: None = None,
+#     ) -> tuple[TensorType, None]:
+#         """
+#         Sample `num_search_space_samples` (see :meth:`__init__`) points from the
+#         ``search_space``. Of those points, return the `num_query_points` points at which
+#         random samples yield the **minima** of the model posterior.
+
+#         :param search_space: The global search space over which the optimization problem
+#             is defined.
+#         :param datasets: Unused.
+#         :param models: The model of the known data. Uses the single key `OBJECTIVE`.
+#         :param state: Unused.
+#         :return: The `num_query_points` points to query, and `None`.
+#         :raise ValueError: If ``models`` do not contain the key `OBJECTIVE`, or it contains any
+#             other key.
+#         """
+#         if models.keys() != {OBJECTIVE}:
+#             raise ValueError(
+#                 f"dict of models must contain the single key {OBJECTIVE}, got keys {models.keys()}"
+#             )
+
+#         if datasets.keys() != {OBJECTIVE}:
+#             raise ValueError(
+#                 f"dict of datasets must contain the single key {OBJECTIVE}, got keys {models.keys()}"
+#             )
+
+
+# 		if len(datasets[OBJECTIVE].query_points) == 0:
+#             raise ValueError("Dataset must be populated.")
+
+#         n = len(datasets[OBJECTIVE].query_points)
+
+#         mean, _ = model.predict(datasets[OBJECTIVE].query_points)
+#         eta = tf.reduce_min(mean, axis=0)
+
+#         mean, variance = models[OBJECTIVE].predict(datasets[OBJECTIVE].query_points)
+
+
+#         L = 
+
+
+
+
+#         nqp = self._num_query_points
+#         initial_points = search_space.sample(nqp)  
+
+#         # apply flows  n times
+
+#         # apply flows b times
+
+
+
+
+
+#         samples = models[OBJECTIVE].sample(query_points, nqp)  # [nqp, ns, ...]
+#         samples_2d = tf.reshape(samples, [nqp, ns])  # [nqp, ns]
+#         indices = tf.math.argmin(samples_2d, axis=1)
+#         unique_indices = tf.unique(indices).y
+#         return tf.gather(query_points, unique_indices), None
