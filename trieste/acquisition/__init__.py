@@ -57,6 +57,4 @@ from .function import (
     expected_improvement,
     lower_confidence_bound,
     probability_of_feasibility,
-    FlowSampling,
-    ModelFlowSampling,
 )

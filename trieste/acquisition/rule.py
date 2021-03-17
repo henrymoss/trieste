@@ -442,30 +442,33 @@ class FlowSampling(AcquisitionRule[None, SearchSpace]):
 
 		d = len(search_space.lower)
 		eta = tf.reduce_min(observations)
-		flow_weights = self._a * (tf.abs(observations -eta) + jitter) / (L * (d-1))
+		flow_weights = self._a * (tf.abs(observations -eta) + self._jitter) / (L * (d-1))
 
 		# fit flow parameters
 		fantasy_query_points = fit_flow_params(query_points, observations, flow_weights)
 
+
 		# perform flow
-		x_flow, q = search_space.sample(self._num_search_space_samples)
+		x_flow, q = flow(search_space.sample(self._num_search_space_samples),flow_weights,fantasy_query_points)
 		
 		#select points still in domain 
-		for i in range(len(search_space.lower)):
-			q = q[x[:,i]>search_space.lower[i]]
-			x = x[x[:,i]>search_space.lower[i]]
-			q = q[x[:,i]<search_space.upper[i]]
-			x = x[x[:,i]<search_space.upper[i]]
 
-		if len(x)<self._num_query_points:
-			raise ValueError(f" only {len(x)} points still in space, so cannot make batch of size B")
+
+		for i in range(len(search_space.lower)):
+			q = q[x_flow[:,i]>search_space.lower[i]]
+			x_flow = x_flow[x_flow[:,i]>search_space.lower[i]]
+			q = q[x_flow[:,i]<search_space.upper[i]]
+			x_flow = x_flow[x_flow[:,i]<search_space.upper[i]]
+
+		if len(x_flow)<self._num_query_points:
+			raise ValueError(f" only {len(x_flow)} points still in space, so cannot make batch of size B")
 
 
 		if self._num_query_points==1:
 			# get sampled point with highest prob
-			return tf.gather(x, tf.argmax(q)), None
+			return tf.gather(x_flow, tf.argmax(q)), None
 		else:
-			return tf.gather(query_points, unique_indices), None
+			return x_flow, q
 
 
 
@@ -482,7 +485,6 @@ def fit_flow_params(query_points, observations, weights):
 		else:
 			x = tf.expand_dims(query_points[j],0)
 			weight = weights[-1]
-			fantasy_point = tf.expand_dims()
 			x = inverse_individual_flow(x,fantasy_points[0],weight)
 
 			for k in range(1,i):
@@ -492,7 +494,7 @@ def fit_flow_params(query_points, observations, weights):
 
 
 	fantasy_points.reverse() # built backwards
-	return fantasy_points
+	return tf.squeeze(tf.stack(fantasy_points),1)
 
 
 # MAKE TF FUNCTION
@@ -505,6 +507,7 @@ def inverse_individual_flow(y,x_0,cst):
 
 # MAKE TF FUNCTION
 def individual_flow(x,x_0, cst):
+	d = tf.cast(tf.shape(x)[1],dtype=tf.float64)
 	r = tf.expand_dims(tf.sqrt(tf.reduce_sum((x-x_0)**2,1)),1)
 	y = x + (x-x_0) * cst/(r)
 	q = (1 + cst/(r))**(1-d)
